@@ -22,11 +22,8 @@ export function todayISO(): string {
 }
 
 export const alokasi: Record<
-  "cash" | "seabank" | "bca" | "gopay",
+  "cash",
   string
 > = {
   cash: "Dompet",
-  seabank: "SeaBank",
-  bca: "BCA",
-  gopay: "GoPay",
 };
