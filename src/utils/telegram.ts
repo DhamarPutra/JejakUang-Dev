@@ -1,6 +1,6 @@
 
 const BOT_TOKEN = "8240723407:AAFHhpL3NsA2X2C0t6-JzecoMsktN9vkAp0";
-const CHAT_ID = "-5278184003";
+const CHAT_ID = "-1003760483968";
 
 export async function sendFeedbackToTelegram(
   type: string,
