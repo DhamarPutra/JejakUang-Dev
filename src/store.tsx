@@ -91,11 +91,17 @@ export function Provider({ children }: { children: React.ReactNode }) {
   );
 
   useEffect(() => {
-    save(txns);
+    const timeout = setTimeout(() => {
+      save(txns);
+    }, 500);
+    return () => clearTimeout(timeout);
   }, [txns]);
 
   useEffect(() => {
-    saveAlokasi(allocations);
+    const timeout = setTimeout(() => {
+      saveAlokasi(allocations);
+    }, 500);
+    return () => clearTimeout(timeout);
   }, [allocations]);
 
   const api = useMemo<Store>(

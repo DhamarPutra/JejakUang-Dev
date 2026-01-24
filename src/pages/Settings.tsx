@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useStore } from "../store";
+import Swal from "sweetalert2";
 
 export default function Settings() {
   const { allocations, addAlokasi, removeAlokasi } = useStore();
   const [label, setLabel] = useState("");
   const [id, setId] = useState("");
 
-  const handleAdd = (e: React.FormEvent) => {
+  const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     const l = label.trim();
     if (!l) return;
@@ -17,18 +18,47 @@ export default function Settings() {
     if (!finalId) return;
 
     if (allocations.some((a) => a.id === finalId)) {
-      alert("ID Alokasi sudah ada (pastikan ID unik)");
+      await Swal.fire({
+        icon: "error",
+        title: "Gagal",
+        text: "ID Alokasi sudah ada (pastikan ID unik)",
+      });
       return;
     }
     
     addAlokasi(finalId, l);
+    await Swal.fire({
+      icon: "success",
+      title: "Berhasil",
+      text: "Alokasi berhasil ditambahkan",
+      timer: 1500,
+      showConfirmButton: false,
+    });
     setLabel("");
     setId("");
   };
 
-  const handleRemove = (id: string, label: string) => {
-    if (confirm(`Hapus alokasi "${label}" (${id})?`)) {
+  const handleRemove = async (id: string, label: string) => {
+    const result = await Swal.fire({
+      title: "Hapus Alokasi?",
+      text: `Anda yakin ingin menghapus "${label}" (${id})?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Ya, Hapus!",
+      cancelButtonText: "Batal"
+    });
+
+    if (result.isConfirmed) {
       removeAlokasi(id);
+      Swal.fire({
+          icon: "success",
+           title: "Terhapus!",
+           text: "Alokasi telah dihapus.",
+           timer: 1500,
+           showConfirmButton: false
+      });
     }
   };
 

@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { FaEyeSlash, FaEye, FaRegCommentDots, FaTimes, FaPaperPlane } from "react-icons/fa";
+import { FaEyeSlash, FaEye, FaRegCommentDots, FaTimes, FaPaperPlane, FaExchangeAlt } from "react-icons/fa";
+import Swal from "sweetalert2";
+import ImportExportModal from "./ImportExportModal";
 import { useMoneyVisibility } from "./MoneyVisibilityContext";
 import { sendFeedbackToTelegram } from "../utils/telegram";
 
@@ -10,7 +12,11 @@ export default function Header() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [fbType, setFbType] = useState("Saran"); // Kritik | Saran
   const [fbMessage, setFbMessage] = useState("");
+
   const [isSending, setIsSending] = useState(false);
+
+  // Import/Export State
+  const [showImportExport, setShowImportExport] = useState(false);
 
   const handleSendFeedback = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,11 +27,21 @@ export default function Header() {
     setIsSending(false);
 
     if (success) {
-      alert("Terima kasih! Pesan Anda telah terkirim.");
+      Swal.fire({
+          icon: "success",
+          title: "Terima Kasih!",
+          text: "Pesan Anda telah terkirim.",
+          timer: 2000,
+          showConfirmButton: false,
+      });
       setFbMessage("");
       setShowFeedback(false);
     } else {
-      alert("Gagal mengirim pesan. Coba lagi nanti.");
+        Swal.fire({
+            icon: "error",
+            title: "Gagal",
+            text: "Gagal mengirim pesan. Coba lagi nanti.",
+        });
     }
   };
 
@@ -82,6 +98,20 @@ export default function Header() {
         </div>
         
         <div style={{ display: "flex", gap: 8 }}>
+            {/* Import/Export Button */}
+            <button
+                type="button"
+                onClick={() => setShowImportExport(true)}
+                title="Impor / Ekspor Data"
+                style={{
+                  ...iconButtonStyle,
+                  background: showImportExport ? "rgba(43, 110, 246, 0.2)" : iconButtonStyle.background,
+                  color: showImportExport ? "#5b9aff" : "#9aa4b2",
+                }}
+            >
+                <FaExchangeAlt />
+            </button>
+
             {/* Feedback Button */}
             <button
                 type="button"
@@ -192,6 +222,11 @@ export default function Header() {
                 </form>
             </div>
         </div>
+      )}
+      
+      {/* Import/Export Modal */}
+      {showImportExport && (
+        <ImportExportModal onClose={() => setShowImportExport(false)} />
       )}
     </>
   );

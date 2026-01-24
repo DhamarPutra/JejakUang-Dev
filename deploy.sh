@@ -16,8 +16,8 @@ cp -r README.md dist/
 cd dist || exit
 
 # git add, commit, push PROD
-# git add .
-# git commit -m "$commit_msg"
-# git push -u origin main
+git add .
+git commit -m "$commit_msg"
+git push -u origin main
 
 echo "✅ Deploy selesai!"

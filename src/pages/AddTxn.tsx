@@ -1,5 +1,6 @@
 import type { FormEvent, ChangeEvent } from "react";
 import { useId, useState } from "react";
+import Swal from "sweetalert2";
 import { useStore } from "../store";
 import {
   formatRupiahInput,
@@ -34,9 +35,16 @@ export default function AddTxn() {
   const nominalNum = parseRupiahInput(nominalRaw);
   const nominalDisplay = nominalRaw ? formatRupiahInput(nominalNum) : "";
 
-  const onSubmit = (e: FormEvent) => {
+  const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!nominalNum) return alert("Nominal harus diisi");
+    if (!nominalNum) {
+      await Swal.fire({
+        icon: "warning",
+        title: "Perhatian",
+        text: "Nominal harus diisi",
+      });
+      return;
+    }
     store.add({
       id: uuid(),
       tanggal,
@@ -49,7 +57,14 @@ export default function AddTxn() {
     });
     setNominalRaw("");
     setKeterangan("");
-    alert("Transaksi ditambahkan");
+    
+    Swal.fire({
+      icon: "success",
+      title: "Berhasil",
+      text: "Transaksi ditambahkan",
+      timer: 1500,
+      showConfirmButton: false,
+    });
   };
 
   const onChangeTipe = (e: ChangeEvent<HTMLSelectElement>) =>

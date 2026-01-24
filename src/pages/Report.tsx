@@ -1,6 +1,8 @@
+import { memo } from "react";
 import { useStore } from "../store";
 import { idr } from "../utils/format";
 import { FaArrowUp, FaArrowDown } from "react-icons/fa";
+import Swal from "sweetalert2";
 
 type Tx = ReturnType<typeof useStore>["txns"][number];
 
@@ -49,7 +51,7 @@ function ActionButton({
   );
 }
 
-function TransactionCard({ tx }: { tx: Tx }) {
+const TransactionCard = memo(function TransactionCard({ tx }: { tx: Tx }) {
   const store = useStore();
   const isMasuk = tx.tipe === "masuk";
 
@@ -86,7 +88,29 @@ function TransactionCard({ tx }: { tx: Tx }) {
               Pulihkan
             </ActionButton>
           ) : (
-            <ActionButton danger onClick={() => store.softDelete(tx.id)}>
+            <ActionButton danger onClick={async () => {
+              const result = await Swal.fire({
+                title: "Hapus Transaksi?",
+                text: "Transaksi ini akan dipindahkan ke sampah.",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#ef4444",
+                cancelButtonColor: "#3085d6",
+                confirmButtonText: "Ya, Hapus!",
+                cancelButtonText: "Batal"
+              });
+
+              if (result.isConfirmed) {
+                store.softDelete(tx.id);
+                Swal.fire({
+                    title: "Terhapus!",
+                    text: "Transaksi telah dihapus.",
+                    icon: "success",
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+              }
+            }}>
               Hapus
             </ActionButton>
           )}
@@ -141,7 +165,7 @@ function TransactionCard({ tx }: { tx: Tx }) {
       </div>
     </div>
   );
-}
+});
 
 export default function Report() {
   const store = useStore();
