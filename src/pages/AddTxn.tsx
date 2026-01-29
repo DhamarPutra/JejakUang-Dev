@@ -9,7 +9,7 @@ import {
 } from "../utils/format";
 import type { Alokasi } from "../types";
 
-type Tipe = "masuk" | "keluar";
+type Tipe = "masuk" | "keluar" | "alokasi";
 
 function uuid() {
   return (crypto as any)?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
@@ -21,6 +21,8 @@ export default function AddTxn() {
   const idTanggal = useId();
   const idTipe = useId();
   const idAlokasi = useId();
+  const idAlokasiDari = useId(); // New ID for "Dari"
+  const idAlokasiKe = useId(); // New ID for "Ke"
   const idNominal = useId();
   const idKet = useId();
   const idPlanned = useId();
@@ -28,6 +30,11 @@ export default function AddTxn() {
   const [tanggal, setTanggal] = useState(todayISO());
   const [tipe, setTipe] = useState<Tipe>("masuk");
   const [alokasi, setAlokasi] = useState<Alokasi>("cash");
+  
+  // New state for Allocation mode
+  const [alokasiDari, setAlokasiDari] = useState<Alokasi>("-");
+  const [alokasiKe, setAlokasiKe] = useState<Alokasi>("-");
+
   const [nominalRaw, setNominalRaw] = useState("");
   const [keterangan, setKeterangan] = useState("");
   const [isPlanned, setIsPlanned] = useState(false);
@@ -45,23 +52,64 @@ export default function AddTxn() {
       });
       return;
     }
-    store.add({
-      id: uuid(),
-      tanggal,
-      tipe,
-      nominal: nominalNum,
-      keterangan: keterangan.trim() || undefined,
-      dihapus: false,
-      isPlanned,
-      alokasi,
-    });
+
+    if (tipe === "alokasi") {
+      // Validasi source != dest
+      if (alokasiDari === alokasiKe) {
+        await Swal.fire({
+          icon: "warning",
+          title: "Perhatian",
+          text: "Akun asal dan tujuan tidak boleh sama",
+        });
+        return;
+      }
+
+      // Create 2 transactions
+      // 1. Keluar dari 'Dari'
+      store.add({
+        id: uuid(),
+        tanggal,
+        tipe: "keluar",
+        nominal: nominalNum,
+        keterangan: keterangan.trim() ? `Transfer ke ${getLabel(alokasiKe)}: ${keterangan}` : `Transfer ke ${getLabel(alokasiKe)}`,
+        dihapus: false,
+        isPlanned,
+        alokasi: alokasiDari,
+      });
+
+      // 2. Masuk ke 'Ke'
+      store.add({
+        id: uuid(),
+        tanggal,
+        tipe: "masuk",
+        nominal: nominalNum,
+        keterangan: keterangan.trim() ? `Terima dari ${getLabel(alokasiDari)}: ${keterangan}` : `Terima dari ${getLabel(alokasiDari)}`,
+        dihapus: false,
+        isPlanned,
+        alokasi: alokasiKe,
+      });
+
+    } else {
+      // Normal transaction
+      store.add({
+        id: uuid(),
+        tanggal,
+        tipe,
+        nominal: nominalNum,
+        keterangan: keterangan.trim() || undefined,
+        dihapus: false,
+        isPlanned,
+        alokasi,
+      });
+    }
+
     setNominalRaw("");
     setKeterangan("");
     
     Swal.fire({
       icon: "success",
       title: "Berhasil",
-      text: "Transaksi ditambahkan",
+      text: tipe === "alokasi" ? "Transfer berhasil dicatat" : "Transaksi ditambahkan",
       timer: 1500,
       showConfirmButton: false,
     });
@@ -72,6 +120,39 @@ export default function AddTxn() {
 
   const onChangeNominal = (e: ChangeEvent<HTMLInputElement>) =>
     setNominalRaw(e.target.value);
+
+  const getLabel = (id: string) => store.allocations.find(a => a.id === id)?.label || id;
+
+  const renderAllocationOptions = (isOut: boolean) => {
+    return store.allocations.map((item) => {
+        const saldo = store.byAccount(false)[item.id]?.sisa || 0;
+        // Logic for disabling if saldo not enough only valid if this is the SOURCE (KELUAR) account
+        // Assuming user wants validation. Original code had it.
+        const notEnough = isOut && nominalNum > 0 && saldo < nominalNum;
+        
+        return (
+          <option key={item.id} value={item.id} disabled={notEnough}>
+            {item.label}
+            {isOut && nominalNum > 0
+              ? ` (Saldo: Rp${saldo.toLocaleString("id-ID")})`
+              : ""}
+          </option>
+        );
+      })
+  };
+
+  const getSaldo = (id: string) => store.byAccount(false)[id]?.sisa || 0;
+
+  let maxSaldo = Infinity;
+  if (tipe === "keluar") {
+    maxSaldo = getSaldo(alokasi);
+  } else if (tipe === "alokasi") {
+    // If "-" is selected, treat as 0 or handle effectively
+    if (alokasiDari === "-") maxSaldo = 0;
+    else maxSaldo = getSaldo(alokasiDari);
+  }
+
+  const isOverLimit = nominalNum > maxSaldo;
 
   return (
     <div className="container">
@@ -98,6 +179,7 @@ export default function AddTxn() {
               <select id={idTipe} value={tipe} onChange={onChangeTipe}>
                 <option value="masuk">Masuk</option>
                 <option value="keluar">Keluar</option>
+                <option value="alokasi">Alokasi</option>
               </select>
             </div>
           </div>
@@ -110,32 +192,70 @@ export default function AddTxn() {
               value={nominalDisplay}
               onChange={onChangeNominal}
               onBlur={onChangeNominal}
+              style={isOverLimit ? { borderColor: "#ef4444" } : {}}
             />
+            {isOverLimit && (
+              <div style={{ color: "#ef4444", fontSize: "12px", marginTop: "4px" }}>
+                Saldo tidak mencukupi (Max: Rp{maxSaldo.toLocaleString("id-ID")})
+              </div>
+            )}
           </div>
-          <div className="field">
-            <label htmlFor={idAlokasi}>Alokasi</label>
-            <select
-              id={idAlokasi}
-              value={alokasi}
-              onChange={(e) => setAlokasi(e.target.value as Alokasi)}
-            >
 
-              {store.allocations.map((item) => {
-                const saldo = store.byAccount(false)[item.id]?.sisa || 0; // saldo aktual
-                const notEnough =
-                  tipe === "keluar" && nominalNum > 0 && saldo < nominalNum;
+          {tipe === "alokasi" ? (
+             <div className="field-row-2">
+               <div className="field">
+                 <label htmlFor={idAlokasiDari}>Dari (Sumber)</label>
+                 <select
+                   id={idAlokasiDari}
+                   value={alokasiDari}
+                   onChange={(e) => setAlokasiDari(e.target.value as Alokasi)}
+                 >
+                  <option value="-" hidden>-</option>
+                   {renderAllocationOptions(true)}
+                 </select>
+               </div>
+               <div className="field">
+                 <label htmlFor={idAlokasiKe}>Ke (Tujuan)</label>
+                 <select
+                   id={idAlokasiKe}
+                   value={alokasiKe}
+                   onChange={(e) => setAlokasiKe(e.target.value as Alokasi)}
+                 >
+                  <option value="-" hidden>-</option>
+                   {store.allocations.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.label}
+                      </option>
+                   ))}
+                 </select>
+               </div>
+             </div>
+          ) : (
+            <div className="field">
+              <label htmlFor={idAlokasi}>Alokasi</label>
+              <select
+                id={idAlokasi}
+                value={alokasi}
+                onChange={(e) => setAlokasi(e.target.value as Alokasi)}
+              >
+                {store.allocations.map((item) => {
+                  const saldo = store.byAccount(false)[item.id]?.sisa || 0;
+                  const notEnough =
+                    tipe === "keluar" && nominalNum > 0 && saldo < nominalNum;
 
-                return (
-                  <option key={item.id} value={item.id} disabled={notEnough}>
-                    {item.label}
-                    {tipe === "keluar" && nominalNum > 0
-                      ? ` (Saldo: Rp${saldo.toLocaleString("id-ID")})`
-                      : ""}
-                  </option>
-                );
-              })}
-            </select>
-          </div>
+                  return (
+                    <option key={item.id} value={item.id} disabled={notEnough}>
+                      {item.label}
+                      {tipe === "keluar" && nominalNum > 0
+                        ? ` (Saldo: Rp${saldo.toLocaleString("id-ID")})`
+                        : ""}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+          )}
+
           <div className="field">
             <label htmlFor={idKet}>Keterangan</label>
             <textarea
@@ -166,7 +286,7 @@ export default function AddTxn() {
                   style={{
                     width: 16,
                     height: 16,
-                    accentColor: "#2b6ef6", // biar warnanya biru kayak tombol
+                    accentColor: "#2b6ef6",            
                   }}
                 />
                 Akan datang
@@ -175,7 +295,7 @@ export default function AddTxn() {
           </div>
         </div>
 
-        <button className="primary" type="submit" disabled={!nominalNum}>
+        <button className="primary" type="submit" disabled={!nominalNum || isOverLimit}>
           Simpan Transaksi
         </button>
       </form>

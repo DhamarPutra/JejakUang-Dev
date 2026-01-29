@@ -143,11 +143,6 @@ const TransactionCard = memo(function TransactionCard({ tx }: { tx: Tx }) {
           marginLeft: 8,
         }}
       >
-        {isMasuk ? (
-          <FaArrowUp style={{ color: "#3ecf8e", flex: "0 0 auto" }} />
-        ) : (
-          <FaArrowDown style={{ color: "#ff6b6b", flex: "0 0 auto" }} />
-        )}
         <div style={{ display: "grid", gap: 4 }}>
           <div style={{ fontSize: 18, fontWeight: 800 }}>
             {idr.format(tx.nominal)}
@@ -162,6 +157,11 @@ const TransactionCard = memo(function TransactionCard({ tx }: { tx: Tx }) {
             </div>
           )}
         </div>
+        {isMasuk ? (
+          <FaArrowUp style={{ color: "#3ecf8e", flex: "0 0 auto" }} />
+        ) : (
+          <FaArrowDown style={{ color: "#ff6b6b", flex: "0 0 auto" }} />
+        )}
       </div>
     </div>
   );

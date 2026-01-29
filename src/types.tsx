@@ -1,4 +1,4 @@
-export type TxType = "masuk" | "keluar";
+export type TxType = "masuk" | "keluar" | "alokasi";
 export type Alokasi = string;
 
 export interface AllocationItem {
