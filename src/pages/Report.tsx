@@ -124,7 +124,10 @@ const TransactionCard = memo(function TransactionCard({ tx }: { tx: Tx }) {
                 background: "#2b6ef6",
                 color: "#fff",
                 width: "50%",
+                opacity: (tx.tipe === "keluar" && (store.byAccount(false)[tx.alokasi]?.sisa || 0) < tx.nominal) ? 0.5 : 1,
+                cursor: (tx.tipe === "keluar" && (store.byAccount(false)[tx.alokasi]?.sisa || 0) < tx.nominal) ? "not-allowed" : "pointer"
               }}
+              disabled={tx.tipe === "keluar" && (store.byAccount(false)[tx.alokasi]?.sisa || 0) < tx.nominal}
               onClick={() => store.confirm(tx.id)}
             >
               Confirm

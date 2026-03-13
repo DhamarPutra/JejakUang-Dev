@@ -295,7 +295,7 @@ export default function AddTxn() {
           </div>
         </div>
 
-        <button className="primary" type="submit" disabled={!nominalNum || isOverLimit}>
+        <button className="primary" type="submit" disabled={!nominalNum || (isOverLimit && !isPlanned)}>
           Simpan Transaksi
         </button>
       </form>
