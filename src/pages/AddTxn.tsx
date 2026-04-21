@@ -124,7 +124,9 @@ export default function AddTxn() {
   const getLabel = (id: string) => store.allocations.find(a => a.id === id)?.label || id;
 
   const renderAllocationOptions = (isOut: boolean) => {
-    return store.allocations.map((item) => {
+    return store.allocations
+      .filter((item) => !item.routineAmount || item.routineAmount === 0)
+      .map((item) => {
         const saldo = store.byAccount(false)[item.id]?.sisa || 0;
         // Logic for disabling if saldo not enough only valid if this is the SOURCE (KELUAR) account
         // Assuming user wants validation. Original code had it.
@@ -222,11 +224,13 @@ export default function AddTxn() {
                    onChange={(e) => setAlokasiKe(e.target.value as Alokasi)}
                  >
                   <option value="-" hidden>-</option>
-                   {store.allocations.map((item) => (
-                      <option key={item.id} value={item.id}>
-                        {item.label}
-                      </option>
-                   ))}
+                    {store.allocations
+                      .filter((item) => !item.routineAmount || item.routineAmount === 0)
+                      .map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.label}
+                        </option>
+                      ))}
                  </select>
                </div>
              </div>
@@ -238,7 +242,9 @@ export default function AddTxn() {
                 value={alokasi}
                 onChange={(e) => setAlokasi(e.target.value as Alokasi)}
               >
-                {store.allocations.map((item) => {
+                {store.allocations
+                  .filter((item) => !item.routineAmount || item.routineAmount === 0)
+                  .map((item) => {
                   const saldo = store.byAccount(false)[item.id]?.sisa || 0;
                   const notEnough =
                     tipe === "keluar" && nominalNum > 0 && saldo < nominalNum;

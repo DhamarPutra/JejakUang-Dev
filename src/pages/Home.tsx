@@ -99,7 +99,9 @@ export default function Home() {
         <div className="card">
           <div className="muted">Alokasi</div>
           <div className="grid">
-            {allocations.map((item) => {
+            {allocations
+              .filter((item) => !item.routineAmount || item.routineAmount === 0)
+              .map((item) => {
               return (
                 <div
                   key={item.id}

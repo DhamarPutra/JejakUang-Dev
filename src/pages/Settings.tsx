@@ -6,6 +6,7 @@ export default function Settings() {
   const { allocations, addAlokasi, removeAlokasi } = useStore();
   const [label, setLabel] = useState("");
   const [id, setId] = useState("");
+  const [routineAmount, setRoutineAmount] = useState("");
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +27,9 @@ export default function Settings() {
       return;
     }
     
-    addAlokasi(finalId, l);
+    const ritual = routineAmount ? parseFloat(routineAmount) : undefined;
+    
+    addAlokasi(finalId, l, ritual);
     await Swal.fire({
       icon: "success",
       title: "Berhasil",
@@ -36,6 +39,7 @@ export default function Settings() {
     });
     setLabel("");
     setId("");
+    setRoutineAmount("");
   };
 
   const handleRemove = async (id: string, label: string) => {
@@ -84,6 +88,13 @@ export default function Settings() {
               placeholder="ID (opsional)"
               style={{ flex: 1 }}
             />
+            <input
+              type="number"
+              value={routineAmount}
+              onChange={(e) => setRoutineAmount(e.target.value)}
+              placeholder="Nominal Rutin (Opsional)"
+              style={{ flex: 1 }}
+            />
           </div>
           <button
           style={{
@@ -117,6 +128,11 @@ export default function Settings() {
               <div style={{ display: "flex", flexDirection: "column" }}>
                   <span style={{ fontWeight: 500 }}>{item.label}</span>
                   <span style={{ fontSize: 11, color: "var(--muted)" }}>ID: {item.id}</span>
+                  {item.routineAmount && (
+                    <span style={{ fontSize: 11, color: "#10b981", fontWeight: 500 }}>
+                      Rutin: Rp {item.routineAmount.toLocaleString("id-ID")} / bln
+                    </span>
+                  )}
               </div>
               <button
                 type="button"

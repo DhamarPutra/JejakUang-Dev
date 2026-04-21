@@ -4,6 +4,7 @@ export type Alokasi = string;
 export interface AllocationItem {
   id: string;
   label: string;
+  routineAmount?: number;
 }
 
 export interface Txn {
@@ -15,4 +16,5 @@ export interface Txn {
   dihapus: boolean;
   isPlanned: boolean;
   alokasi: Alokasi;
+  isRoutine?: boolean;
 }

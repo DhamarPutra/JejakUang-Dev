@@ -78,7 +78,7 @@ interface Store {
   ): Record<string, { masuk: number; keluar: number; sisa: number }>;
 
   allocations: AllocationItem[];
-  addAlokasi(id: string, label: string): void;
+  addAlokasi(id: string, label: string, routineAmount?: number): void;
   removeAlokasi(id: string): void;
 }
 
@@ -89,6 +89,50 @@ export function Provider({ children }: { children: React.ReactNode }) {
   const [allocations, setAllocations] = useState<AllocationItem[]>(() =>
     loadAlokasi()
   );
+
+  // Routine Checker
+  useEffect(() => {
+    const today = new Date();
+    const day = today.getDate();
+    
+    if (day >= 15) {
+      const year = today.getFullYear();
+      const month = today.getMonth() + 1;
+      const monthPrefix = `${year}-${month.toString().padStart(2, "0")}`;
+      
+      const toAdd: Txn[] = [];
+      
+      for (const acc of allocations) {
+        if (acc.routineAmount && acc.routineAmount > 0) {
+          // Cek apakah sudah ada transaksi rutin untuk alokasi ini di bulan ini
+          const exists = txns.some(t => 
+            t.alokasi === acc.id && 
+            t.isRoutine && 
+            t.tanggal.startsWith(monthPrefix) &&
+            !t.dihapus
+          );
+          
+          if (!exists) {
+            toAdd.push({
+              id: `routine-${acc.id}-${monthPrefix}`,
+              tanggal: `${monthPrefix}-15`,
+              tipe: "keluar",
+              nominal: acc.routineAmount,
+              keterangan: `Rutin: ${acc.label}`,
+              dihapus: false,
+              isPlanned: false,
+              alokasi: acc.id,
+              isRoutine: true
+            });
+          }
+        }
+      }
+      
+      if (toAdd.length > 0) {
+        setTxns(prev => [...toAdd, ...prev]);
+      }
+    }
+  }, [allocations, txns]); // Run when txns or allocations change, but existence check prevents loop.
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -214,10 +258,10 @@ export function Provider({ children }: { children: React.ReactNode }) {
         return accs;
       },
       allocations,
-      addAlokasi(id, label) {
+      addAlokasi(id, label, routineAmount) {
         setAllocations((prev) => {
           if (prev.some((a) => a.id === id)) return prev;
-          return [...prev, { id, label }];
+          return [...prev, { id, label, routineAmount }];
         });
       },
       removeAlokasi(id) {
